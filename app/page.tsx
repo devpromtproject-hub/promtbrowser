@@ -1,5 +1,5 @@
 "use client";
-
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import React, { useState } from 'react';
 import { Copy, Sparkles, Settings2, Image as ImageIcon, Video, Check } from 'lucide-react';
 
@@ -11,17 +11,34 @@ export default function PromptEditor() {
   const [copied, setCopied] = useState(false);
 
   // 2. Hàm xử lý tối ưu Prompt
-  const handleOptimize = () => {
-    if (!userInput) return alert("Vui lòng nhập ý tưởng!");
-    setIsLoading(true);
+  const handleOptimize = async () => {
+  if (!userInput) return alert("Vui lòng nhập ý tưởng!");
+  setIsLoading(true);
+
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
     
-    // Giả lập AI xử lý
-    setTimeout(() => {
-      const promptTemplate = `A professional, high-quality cinematic shot of ${userInput}, detailed textures, 8k resolution, masterpiece lighting, trending on artstation --ar 16:9`;
-      setResult(promptTemplate);
-      setIsLoading(false);
-    }, 1000);
-  };
+    // Thử dùng tên model cơ bản nhất
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-flash-latest",
+    });
+
+    const systemPrompt = "Write a high-quality AI image prompt in Vietnamese for: ";
+    
+    // Thêm một chút tùy chỉnh để request nhẹ hơn
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: systemPrompt + userInput }] }],
+    });
+
+    const response = await result.response;
+    setResult(response.text());
+  } catch (error) {
+    console.error("Lỗi chi tiết:", error);
+    setResult("Lỗi kết nối. Thử lại sau 1 vài giây nhé!");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // 3. Hàm xử lý Copy
   const handleCopy = () => {
