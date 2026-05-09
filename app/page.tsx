@@ -1,134 +1,123 @@
 "use client";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
 import React, { useState } from 'react';
-import { Copy, Sparkles, Settings2, Image as ImageIcon, Video, Check } from 'lucide-react';
+import { 
+  Sparkles, Compass, Plus, Search, Image as ImageIcon, Video, Copy, Wand2, Loader2 
+} from 'lucide-react';
+import Link from 'next/link';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export default function PromptEditor() {
-  // 1. Quản lý dữ liệu (State)
+export default function AIAppPage() {
   const [userInput, setUserInput] = useState("");
-  const [result, setResult] = useState("Kết quả tối ưu sẽ hiện ở đây...");
+  const [result, setResult] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  // 2. Hàm xử lý tối ưu Prompt
   const handleOptimize = async () => {
-  if (!userInput) return alert("Vui lòng nhập ý tưởng!");
-  setIsLoading(true);
-
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
-    
-    // Thử dùng tên model cơ bản nhất
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-flash-latest",
-    });
-
-    const systemPrompt = "Write a high-quality AI image prompt in Vietnamese for: ";
-    
-    // Thêm một chút tùy chỉnh để request nhẹ hơn
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: systemPrompt + userInput }] }],
-    });
-
-    const response = await result.response;
-    setResult(response.text());
-  } catch (error) {
-    console.error("Lỗi chi tiết:", error);
-    setResult("Lỗi kết nối. Thử lại sau 1 vài giây nhé!");
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-  // 3. Hàm xử lý Copy
-  const handleCopy = () => {
-    navigator.clipboard.writeText(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000); // Hiển thị trạng thái đã copy trong 2 giây
+    if (!userInput) return alert("Vui lòng nhập ý tưởng!");
+    setIsLoading(true);
+    try {
+      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const systemPrompt = "Bạn là chuyên gia Prompt Engineering. Hãy chuyển ý tưởng sau thành một Prompt tiếng Việt chuyên sâu cho AI tạo ảnh. Chỉ trả về nội dung Prompt: ";
+      const res = await model.generateContent(systemPrompt + userInput);
+      const text = res.response.text();
+      setResult(text);
+    } catch (error) {
+      setResult("Lỗi kết nối AI. Hãy kiểm tra API Key hoặc mạng!");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
-      {/* Sidebar - Tạm thời để trang trí */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 p-4 flex-col">
-        <div className="flex items-center gap-2 mb-8 px-2 font-bold text-xl text-indigo-600">
-          <Sparkles className="fill-indigo-600" />
-          <span>Dự án Prompt</span>
+    <div className="flex h-screen bg-[#0d0d0d] text-white overflow-hidden font-sans">
+      
+      {/* SIDEBAR - Giống hệt bên Store */}
+      <aside className="w-64 flex-shrink-0 border-r border-white/10 flex flex-col p-4 bg-[#0d0d0d] z-20">
+        <div className="flex items-center gap-2 mb-8 px-2 font-black text-2xl tracking-tighter">
+          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">F</div>
+          <span>FLOW</span>
         </div>
-        <p className="text-xs font-semibold text-slate-400 uppercase mb-4 px-2 tracking-widest">Lịch sử</p>
-        <div className="text-sm text-slate-400 px-2 italic">Chưa có lịch sử...</div>
+
+        <nav className="flex-1 space-y-2">
+          <Link href="/" className="flex items-center gap-4 px-4 py-3 rounded-xl bg-white/10 text-white font-bold shadow-lg transition-all">
+            <Sparkles size={20} className="text-indigo-400" />
+            AI Generator
+          </Link>
+          <Link href="/store" className="flex items-center gap-4 px-4 py-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all">
+            <Compass size={20} />
+            Explore Store
+          </Link>
+          <button className="w-full mt-6 py-3 bg-[#deff9a] text-black font-extrabold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition">
+            <Plus size={18} /> Create
+          </button>
+        </nav>
+
+        <div className="mt-auto pt-6 border-t border-white/5">
+          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl">
+            <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center"><Search size={16}/></div>
+            <div className="flex-1"><p className="text-xs font-bold">Guest User</p></div>
+            <button className="text-[10px] bg-white text-black px-2 py-1 rounded-lg">Log In</button>
+          </div>
+        </div>
       </aside>
 
-      {/* Main Workspace */}
-      <main className="flex-1 flex flex-col items-center p-4 md:p-8 overflow-y-auto">
-        <div className="w-full max-w-3xl space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold mb-2">Chế tác Prompt</h2>
-            <p className="text-slate-500 text-sm">Biến ý tưởng thành câu lệnh AI chuyên nghiệp</p>
+      {/* MAIN CONTENT - Chế tác Prompt */}
+      <main className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto">
+        <div className="max-w-2xl w-full space-y-8">
+          
+          <div className="text-center space-y-2">
+            <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent">
+              Chế tác Prompt
+            </h1>
+            <p className="text-slate-400 text-lg">Biến ý tưởng thành câu lệnh AI chuyên nghiệp</p>
           </div>
 
-          {/* Input */}
-          <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-            <textarea 
+          {/* Ô Nhập liệu - Thiết kế Dark */}
+          <div className="bg-[#1a1a1a] border border-white/10 rounded-[32px] p-6 shadow-2xl focus-within:border-indigo-500/50 transition-all">
+            <textarea
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               placeholder="Ví dụ: Một phi hành gia đang cưỡi ngựa trên sao hỏa..."
-              className="w-full h-32 p-4 border border-slate-100 rounded-xl bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none transition text-base"
+              className="w-full bg-transparent border-none focus:ring-0 text-xl placeholder:text-slate-600 h-32 resize-none"
             />
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between mt-4">
               <div className="flex gap-2">
-                <button className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition">
-                  <ImageIcon size={14} /> Ảnh
+                <button className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-sm font-bold hover:bg-white/10 transition">
+                  <ImageIcon size={16} /> Ảnh
                 </button>
-                <button className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-medium hover:bg-indigo-50 hover:text-indigo-600 transition">
-                  <Video size={14} /> Video
+                <button className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-sm font-bold hover:bg-white/10 transition">
+                  <Video size={16} /> Video
                 </button>
               </div>
               <button 
                 onClick={handleOptimize}
                 disabled={isLoading}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition shadow-lg shadow-indigo-100"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 transition active:scale-95 disabled:opacity-50"
               >
-                {isLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Sparkles size={18} />}
-                {isLoading ? "Đang tạo..." : "Tối ưu Prompt"}
+                {isLoading ? <Loader2 className="animate-spin" /> : <Wand2 size={18} />}
+                {isLoading ? "Đang tối ưu..." : "Tối ưu ngay"}
               </button>
             </div>
           </div>
 
-          {/* Result Output */}
-          <div className="bg-slate-900 text-slate-100 p-6 rounded-2xl shadow-xl relative group">
-            <div className="absolute top-4 right-4">
-              <button 
-                onClick={handleCopy}
-                className="p-2 hover:bg-white/10 rounded-lg transition text-indigo-300"
-                title="Sao chép"
-              >
-                {copied ? <Check size={20} className="text-green-400" /> : <Copy size={20} />}
-              </button>
+          {/* Kết quả */}
+          {result && (
+            <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-[28px] p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[10px] uppercase font-black tracking-[0.2em] text-indigo-400">Kết quả tối ưu</span>
+                <button 
+                  onClick={() => {navigator.clipboard.writeText(result); alert("Đã copy!")}}
+                  className="p-2 bg-indigo-500/20 rounded-lg hover:bg-indigo-500/40 transition"
+                >
+                  <Copy size={16} />
+                </button>
+              </div>
+              <p className="text-lg leading-relaxed text-indigo-50 font-medium">{result}</p>
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3">Prompt Kết Quả</p>
-            <p className="text-lg font-medium leading-relaxed pr-10 text-indigo-50">
-              {result}
-            </p>
-          </div>
+          )}
         </div>
       </main>
-
-      {/* Settings - Trang trí */}
-      <aside className="hidden lg:block w-72 bg-white border-l border-slate-200 p-6 space-y-6">
-        <div className="flex items-center gap-2 font-bold text-slate-700 border-b pb-4">
-          <Settings2 size={18} />
-          <span>Tùy chỉnh</span>
-        </div>
-        <div className="space-y-4">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gợi ý phong cách</p>
-          <div className="flex flex-wrap gap-2">
-            {['Cinematic', 'Anime', 'Cyberpunk', 'Realistic', 'Oil Painting'].map(s => (
-              <span key={s} className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-full text-xs text-slate-600 italic">#{s}</span>
-            ))}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }
